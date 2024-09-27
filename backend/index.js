@@ -1,205 +1,151 @@
-require('dotenv').config();
-const express=require("express");
-const mongoose=require("mongoose");
-const bodyParser=require("body-parser");
-const cors=require("cors");
-const {HoldingsModel}=require('./model/HoldingsModel');
-const { PositionsModel } = require("./model/PositionsModel");
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+
+const bcrypt = require("bcryptjs");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
+const { HoldingsModel } = require("./model/HoldingsModel");
+const { PositionsModel } = require("./model/PositionModel");
 const { OrdersModel } = require("./model/OrdersModel");
-const PORT=process.env.PORT||3002;
-const uri=process.env.MONGO_URL;
-const app=express();
-app.use(cors());
+
+const PORT = 5000;
+const cors = require("cors");
+const app = express();
+app.use(cookieParser());
+
+app.use(cors({ 
+  origin: '*'  // Allow all origins
+}));
 app.use(bodyParser.json());
-/*app.get('/addHoldings',async(req,res)=>{
-    let tempHoldings= [
-        {
-          name: "BHARTIARTL",
-          qty: 2,
-          avg: 538.05,
-          price: 541.15,
-          net: "+0.58%",
-          day: "+2.99%",
-        },
-        {
-          name: "HDFCBANK",
-          qty: 2,
-          avg: 1383.4,
-          price: 1522.35,
-          net: "+10.04%",
-          day: "+0.11%",
-        },
-        {
-          name: "HINDUNILVR",
-          qty: 1,
-          avg: 2335.85,
-          price: 2417.4,
-          net: "+3.49%",
-          day: "+0.21%",
-        },
-        {
-          name: "INFY",
-          qty: 1,
-          avg: 1350.5,
-          price: 1555.45,
-          net: "+15.18%",
-          day: "-1.60%",
-          isLoss: true,
-        },
-        {
-          name: "ITC",
-          qty: 5,
-          avg: 202.0,
-          price: 207.9,
-          net: "+2.92%",
-          day: "+0.80%",
-        },
-        {
-          name: "KPITTECH",
-          qty: 5,
-          avg: 250.3,
-          price: 266.45,
-          net: "+6.45%",
-          day: "+3.54%",
-        },
-        {
-          name: "M&M",
-          qty: 2,
-          avg: 809.9,
-          price: 779.8,
-          net: "-3.72%",
-          day: "-0.01%",
-          isLoss: true,
-        },
-        {
-          name: "RELIANCE",
-          qty: 1,
-          avg: 2193.7,
-          price: 2112.4,
-          net: "-3.71%",
-          day: "+1.44%",
-        },
-        {
-          name: "SBIN",
-          qty: 4,
-          avg: 324.35,
-          price: 430.2,
-          net: "+32.63%",
-          day: "-0.34%",
-          isLoss: true,
-        },
-        {
-          name: "SGBMAY29",
-          qty: 2,
-          avg: 4727.0,
-          price: 4719.0,
-          net: "-0.17%",
-          day: "+0.15%",
-        },
-        {
-          name: "TATAPOWER",
-          qty: 5,
-          avg: 104.2,
-          price: 124.15,
-          net: "+19.15%",
-          day: "-0.24%",
-          isLoss: true,
-        },
-        {
-          name: "TCS",
-          qty: 1,
-          avg: 3041.7,
-          price: 3194.8,
-          net: "+5.03%",
-          day: "-0.25%",
-          isLoss: true,
-        },
-        {
-          name: "WIPRO",
-          qty: 4,
-          avg: 489.3,
-          price: 577.75,
-          net: "+18.08%",
-          day: "+0.32%",
-        },
-      ];
-      tempHoldings.forEach((item)=>{
-         let newHolding = new HoldingsModel({
-            name: item.name,
-            qty:item.qty,
-            avg: item.avg,
-            price: item.price,
-            net: item.net,
-            day: item.day,
-});
-newHolding.save();
-});
-res.send("Done!");
-});*/
- /*app.get("/addPositions", async (req, res) => {
-   let tempPositions = [
-    {
-      product: "CNC",
-      name: "EVEREADY",
-      qty: 2,
-       avg: 316.27,
-       price: 312.35,
-       net: "+0.58%",
-      day: "-1.24%",
-       isLoss: true,
-     },
-     {
-       product: "CNC",
-       name: "JUBLFOOD",
-       qty: 1,
-       avg: 3124.75,
-       price: 3082.65,
-      net: "+10.04%",
-      day: "-1.35%",
-      isLoss: true,
-     },
-   ];
 
-  tempPositions.forEach((item) => {
-     let newPosition = new PositionsModel({
-       product: item.product,
-       name: item.name,
-      qty: item.qty,
-      avg: item.avg,
-      price: item.price,
-       net: item.net,
-       day: item.day,
-       isLoss: item.isLoss,
-     });
+mongoose
+  .connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error", err));
 
-     newPosition.save();
-   });
-   res.send("Done!");
- });*/
-app.get("/allHoldings",async(req,res)=>{
-  let allHoldings=await HoldingsModel.find({});
-  res.json(allHoldings);
-});
-app.get("/allPositions",async(req,res)=>{
-  let allPositions=await PositionsModel.find({});
-  res.json(allPositions);
-});
-app.post("/newOrder", async (req, res) => {
-  let newOrder = new OrdersModel({
-    name: req.body.name,
-    qty: req.body.qty,
-    price: req.body.price,
-    mode: req.body.mode,
-  });
+const jwtSecret = process.env.JWT_TOKEN;
 
-  newOrder.save();
-
-  res.send("Order saved!");
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
 });
 
-      
-app.listen(PORT,()=>{
-    console.log("App started!");
-    mongoose.connect(uri);
-    console.log("DB connected!");
+const User = mongoose.model("User", userSchema);
+
+// Authentication middleware
+const authMiddleware = (req, res, next) => {
+  const token = req.cookies.token; // Get token from cookies
+
+  if (!token) {
+    return res.status(401).json({ msg: "No token, authorization denied" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret); // Verify token with your secret
+    req.user = decoded.user; // Add user from payload
+    next(); // Move to the next middleware or route handler
+  } catch (err) {
+    res.status(401).json({ msg: "Token is not valid" });
+  }
+};
+
+// Signup route
+app.post("/signup", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ msg: "User already exists" });
+    }
+
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Save the user
+    user = new User({ email, password: hashedPassword });
+    await user.save();
+
+    // Create JWT token
+    const payload = { user: { id: user.id } };
+    const token = jwt.sign(payload, jwtSecret, { expiresIn: "1h" });
+
+    // Set cookie
+    res.cookie("token", token, { httpOnly: true });
+
+    res.status(201).json({ msg: "User registered successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// Login route
+app.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const token = jwt.sign({ userId: user._id }, jwtSecret, {
+        expiresIn: "1h",
+      });
+      res.cookie("token", token, { httpOnly: true });
+      res.redirect("https://zerodha-omega.vercel.app");
+    } else {
+      res.status(401).json({ error: "Invalid credentials" });
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Protected routes
+app.get("/allHoldings", authMiddleware, async (req, res) => {
+  try {
+    let allHoldings = await HoldingsModel.find({});
+    res.json(allHoldings);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.get("/allPositions", authMiddleware, async (req, res) => {
+  try {
+    let allPositions = await PositionsModel.find({});
+    res.json(allPositions);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/newOrder", authMiddleware, async (req, res) => {
+  try {
+    let newOrder = new OrdersModel({
+      name: req.body.name,
+      qty: req.body.qty,
+      price: req.body.price,
+      mode: req.body.mode,
+    });
+
+    await newOrder.save();
+    res.send("Order saved!");
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`App started on port ${PORT}!`);
 });
