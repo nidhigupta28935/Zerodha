@@ -8,10 +8,11 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const { HoldingsModel } = require("./model/HoldingsModel");
-const { PositionsModel } = require("./model/PositionModel");
+const { PositionsModel } = require("./model/PositionsModel");
 const { OrdersModel } = require("./model/OrdersModel");
 
-const PORT = 5000;
+const PORT = process.env.PORT || 3002;
+const uri = process.env.MONGO_URL;
 const cors = require("cors");
 const app = express();
 app.use(cookieParser());
@@ -109,14 +110,9 @@ app.post("/login", async (req, res) => {
 });
 
 // Protected routes
-app.get("/allHoldings", authMiddleware, async (req, res) => {
-  try {
+app.get('/allHoldings',  async (req, res) => {
     let allHoldings = await HoldingsModel.find({});
     res.json(allHoldings);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).json({ error: "Server error" });
-  }
 });
 
 app.get("/allPositions", authMiddleware, async (req, res) => {
@@ -147,5 +143,7 @@ app.post("/newOrder", authMiddleware, async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`App started on port ${PORT}!`);
+  console.log("App started!");
+  mongoose.connect(uri);
+  console.log("DB started!");
 });
